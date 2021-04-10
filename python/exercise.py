@@ -1,0 +1,1 @@
+print("okan"*3)
