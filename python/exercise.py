@@ -1,1 +1,0 @@
-print("okan"*3)
