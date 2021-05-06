@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+
+<h1>This page is for showing how to use get and post method</h1>
+
+{% if message %}
+<form action="/total" method="post">
+    <h3> Number 1 <input type="number" name="value1"> </h3>
+    <h3> Number 2 <input type="number" name="value2"></h3>
+    <h3> Number 3 <input type="number" name="value3"></h3>
+    <button type="submit">Calculate</button>
+</form>
+
+{% else %}
+<form action="/total" method="post">
+    <h3> Number 1 <input type="number" name="value1"> </h3>
+    <h3> Number 2 <input type="number" name="value2"></h3>
+    <h3> Number 3 <input type="number" name="value3"></h3>
+    <button type="submit">Calculate</button>
+</form>
+<h3> {{message}} </h3>
+{% endif %}
+
+
+</body>
+</html>
