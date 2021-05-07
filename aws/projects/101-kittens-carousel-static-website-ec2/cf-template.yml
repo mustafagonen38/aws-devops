@@ -1,0 +1,133 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  This template will create Application Load Balancer with ASG using LT
+
+Parameters:
+  MustiVPC:
+    Description: VPC Id of your existing account
+    Type: AWS::EC2::VPC::Id
+  MustiSubnets:
+    Description: List of Subnet Ids in your VPC. Please select at least 2 of them.
+    Type: List<AWS::EC2::Subnet::Id>
+  KeyName:
+    Description: Select your key pair from the list
+    Type: AWS::EC2::KeyPair::KeyName
+  MustiInstanceType:
+    Description: Select the instance type for your web server.
+    Type: String
+    Default: t2.micro
+    
+
+Mappings:
+  RegionImageMap:
+    us-east-1:
+      AMI: ami-0d5eff06f840b45e9
+    us-east-2:
+      AMI: ami-077e31c4939f6a2f3
+    us-west-1:
+      AMI: ami-04468e03c37242e1e
+    us-west-2:
+      AMI: ami-0cf6f5c8a62fa5da6
+    eu-west-1:
+      AMI: ami-063d4ab14480ac177
+
+Resources:
+  MustiSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enables SSH and HTTP ports #required
+      SecurityGroupIngress: 
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      VpcId: !Ref MustiVPC
+
+  MustiALBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 25
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 3
+      Port: 80
+      Protocol: HTTP
+      UnhealthyThresholdCount: 3
+      VpcId: !Ref MustiVPC
+
+  CallApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      SecurityGroups:
+        - !GetAtt MustiSecGroup.GroupId
+      Subnets: !Ref MustiSubnets
+
+  CallALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions: #required
+        - Type: forward
+          TargetGroupArn: !Ref MustiALBTargetGroup
+      LoadBalancerArn: !Ref MustiApplicationLoadBalancer #required
+      Port: 80
+      Protocol: HTTP
+
+  CallLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        KeyName: !Ref KeyName
+        ImageId: !FindInMap 
+          - RegionImageMap
+          - !Ref AWS::Region
+          - AMI
+        UserData: !Base64 |
+            #!/bin/bash
+            yum update -y
+            yum install -y httpd
+            chmod -R 777 /var/www/html
+            cd /var/www/html
+            wget 
+            wget
+            wget 
+            systemctl start httpd
+            systemctl enable httpd
+        SecurityGroupIds:
+          - !Ref CallSecGroup
+        InstanceType: !Ref CallInstanceType
+  
+  CallAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AvailabilityZones: !GetAZs 
+      LaunchTemplate:
+        LaunchTemplateId: !Ref CallLaunchTemplate
+        Version: '1'
+      HealthCheckType: ELB
+      HealthCheckGracePeriod: 300
+      MinSize: '1'
+      DesiredCapacity: '2'
+      MaxSize: '3'
+      TargetGroupARNs:
+        - !Ref CallALBTargetGroup
+
+  CallCPUPolicy:
+    Type: "AWS::AutoScaling::ScalingPolicy"
+    Properties:
+      AutoScalingGroupName: !Ref CallAutoScalingGroup
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: 40.0
+
+Outputs:
+  AppURL:
+    Description: URL of Call App
+    Value: !Join 
+      - ''
+      - - 'http://'
+        - !GetAtt CallApplicationLoadBalancer.DNSName
