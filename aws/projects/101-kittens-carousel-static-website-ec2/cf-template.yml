@@ -58,14 +58,14 @@ Resources:
       UnhealthyThresholdCount: 3
       VpcId: !Ref MustiVPC
 
-  CallApplicationLoadBalancer:
+  MustiApplicationLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
       SecurityGroups:
         - !GetAtt MustiSecGroup.GroupId
       Subnets: !Ref MustiSubnets
 
-  CallALBListener:
+  MustiALBListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       DefaultActions: #required
@@ -75,7 +75,7 @@ Resources:
       Port: 80
       Protocol: HTTP
 
-  CallLaunchTemplate:
+  MustiLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties:
       LaunchTemplateData:
@@ -89,22 +89,28 @@ Resources:
             yum update -y
             yum install -y httpd
             chmod -R 777 /var/www/html
+            chmod -R 777 /var/www/img
             cd /var/www/html
-            wget 
-            wget
-            wget 
+            wget https://raw.githubusercontent.com/mustafagonen38/aws-devops/main/aws/projects/101-kittens-carousel-static-website-ec2/static-web/index.html
+            cd /var/www/img
+            wget https://raw.githubusercontent.com/mustafagonen38/aws-devops/main/aws/projects/101-kittens-carousel-static-website-ec2/static-web/cat0.jpg
+            wget https://raw.githubusercontent.com/mustafagonen38/aws-devops/main/aws/projects/101-kittens-carousel-static-website-ec2/static-web/cat1.jpg
+            wget https://raw.githubusercontent.com/mustafagonen38/aws-devops/main/aws/projects/101-kittens-carousel-static-website-ec2/static-web/cat2.jpg
             systemctl start httpd
             systemctl enable httpd
         SecurityGroupIds:
-          - !Ref CallSecGroup
-        InstanceType: !Ref CallInstanceType
+          - !Ref MustiSecGroup
+        InstanceType: !Ref MustiInstanceType
+        TagSpecifications:
+          - Key: Name
+          - Value: Web Server of KittensProject
   
-  CallAutoScalingGroup:
+  MustiAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
       AvailabilityZones: !GetAZs 
       LaunchTemplate:
-        LaunchTemplateId: !Ref CallLaunchTemplate
+        LaunchTemplateId: !Ref MustiLaunchTemplate
         Version: '1'
       HealthCheckType: ELB
       HealthCheckGracePeriod: 300
@@ -112,12 +118,12 @@ Resources:
       DesiredCapacity: '2'
       MaxSize: '3'
       TargetGroupARNs:
-        - !Ref CallALBTargetGroup
+        - !Ref MustiALBTargetGroup
 
-  CallCPUPolicy:
+  MustiCPUPolicy:
     Type: "AWS::AutoScaling::ScalingPolicy"
     Properties:
-      AutoScalingGroupName: !Ref CallAutoScalingGroup
+      AutoScalingGroupName: !Ref MustiAutoScalingGroup
       PolicyType: TargetTrackingScaling
       TargetTrackingConfiguration:
         PredefinedMetricSpecification:
@@ -126,8 +132,8 @@ Resources:
 
 Outputs:
   AppURL:
-    Description: URL of Call App
+    Description: URL of Musti App
     Value: !Join 
       - ''
       - - 'http://'
-        - !GetAtt CallApplicationLoadBalancer.DNSName
+        - !GetAtt MustiApplicationLoadBalancer.DNSName
