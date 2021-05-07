@@ -101,10 +101,7 @@ Resources:
         SecurityGroupIds:
           - !Ref MustiSecGroup
         InstanceType: !Ref MustiInstanceType
-        TagSpecifications:
-          - Key: Name
-          - Value: Web Server of KittensProject
-  
+        
   MustiAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
